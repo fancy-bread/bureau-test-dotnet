@@ -18,11 +18,11 @@ specs/
 ## Commands
 
 ```bash
-dotnet restore src/BureauObservability.sln   # install dependencies
-dotnet build src/BureauObservability.sln     # compile
-dotnet test src/BureauObservability.sln      # run tests (primary acceptance gate)
+dotnet restore src/           # install dependencies
+dotnet build src/             # compile
+dotnet test src/              # run tests (primary acceptance gate)
 dotnet run --project src/BureauObservability.Web/BureauObservability.Web.csproj  # run dashboard
-dotnet format src/BureauObservability.sln --verify-no-changes  # lint
+dotnet format src/ --verify-no-changes  # lint
 ```
 
 ## Code Style

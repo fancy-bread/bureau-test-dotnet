@@ -1,10 +1,10 @@
 [runtime]
 language    = "dotnet"
 base_image  = "mcr.microsoft.com/dotnet/sdk:10"
-install_cmd = "dotnet restore"
-lint_cmd    = "dotnet format src/BureauObservability.sln --verify-no-changes"
-build_cmd   = "dotnet build src/BureauObservability.sln"
-test_cmd    = "dotnet test src/BureauObservability.sln"
+install_cmd = "dotnet restore src/"
+lint_cmd    = "dotnet format src/ --verify-no-changes"
+build_cmd   = "dotnet build src/"
+test_cmd    = "dotnet test src/"
 
 [ralph_loop]
 max_builder_attempts = 3
