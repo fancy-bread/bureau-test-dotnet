@@ -1,0 +1,16 @@
+[runtime]
+language    = "dotnet"
+base_image  = "mcr.microsoft.com/dotnet/sdk:10"
+install_cmd = "dotnet restore src/"
+lint_cmd    = "dotnet format src/ --verify-no-changes"
+build_cmd   = "dotnet build src/"
+test_cmd    = "dotnet test src/"
+
+[ralph_loop]
+max_builder_attempts = 3
+max_rounds           = 3
+command_timeout      = 300
+
+[bureau]
+builder_model   = "claude-sonnet-4-6"
+reviewer_model  = "claude-opus-4-7"

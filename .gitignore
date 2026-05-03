@@ -55,3 +55,9 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Speckit — ignore all except constitution
+.specify/*
+!.specify/memory/
+.specify/memory/*
+!.specify/memory/constitution.md
