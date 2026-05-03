@@ -60,7 +60,7 @@ specs/001-kafka-observability-dashboard/
 
 ```text
 src/
-├── BureauObservability.sln
+├── BureauObservability.slnx
 ├── BureauObservability.Web/
 │   ├── BureauObservability.Web.csproj
 │   ├── Program.cs
