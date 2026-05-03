@@ -9,7 +9,7 @@ Auto-generated from all feature plans. Last updated: 2026-05-02
 ## Project Structure
 
 ```text
-src/BureauObservability.sln
+src/BureauObservability.slnx
 src/BureauObservability.Web/
 src/BureauObservability.Tests/
 specs/

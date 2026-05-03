@@ -1,10 +1,10 @@
 [runtime]
 language    = "dotnet"
 base_image  = "mcr.microsoft.com/dotnet/sdk:10"
-install_cmd = "dotnet restore src/"
-lint_cmd    = "dotnet format src/ --verify-no-changes"
-build_cmd   = "dotnet build src/"
-test_cmd    = "dotnet test src/"
+install_cmd = "make restore"
+lint_cmd    = "make lint"
+build_cmd   = "make build"
+test_cmd    = "make test"
 
 [ralph_loop]
 max_builder_attempts = 3

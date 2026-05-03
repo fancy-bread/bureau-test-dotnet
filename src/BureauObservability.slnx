@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="BureauObservability.Tests/BureauObservability.Tests.csproj" />
+  <Project Path="BureauObservability.Web/BureauObservability.Web.csproj" />
+</Solution>
