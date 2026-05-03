@@ -9,7 +9,7 @@ description: "Task list for Kafka Observability Dashboard — Core Scaffold"
 
 **Tests**: Mandatory — constitution Principle II (Test-First) requires tests written and failing before each implementation file.
 
-**Organization**: Tasks are grouped by user story to enable independent implementation and testing. Each phase ends with a Reviewer review and a commit before the next phase begins.
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing. Each phase ends with a gate verification and a commit before the next phase begins.
 
 ## Format: `[ID] [P?] [Story?] Description`
 
@@ -36,7 +36,7 @@ description: "Task list for Kafka Observability Dashboard — Core Scaffold"
 - [ ] T005 [P] Add NuGet packages to web project: `Confluent.Kafka`, `Confluent.Kafka.DependencyInjection`, `CloudNative.CloudEvents`, `CloudNative.CloudEvents.Kafka`
 - [ ] T006 [P] Add NuGet packages to test project: `NSubstitute`, `Microsoft.AspNetCore.Mvc.Testing`
 - [ ] T007 Verify scaffold: `dotnet build src/BureauObservability.sln` exits 0
-- [ ] T008 Phase 1 checkpoint: Reviewer reviews phase, verify `dotnet build src/BureauObservability.sln` exits 0, commit — `"feat: phase 1 — solution and project scaffold"`
+- [ ] T008 Phase 1 checkpoint: verify `dotnet build src/` exits 0, commit — `"feat: phase 1 — solution and project scaffold"`
 
 ---
 
@@ -52,7 +52,7 @@ description: "Task list for Kafka Observability Dashboard — Core Scaffold"
 - [ ] T012 Create `IEventStore.cs` interface in `src/BureauObservability.Web/Services/IEventStore.cs` — methods: `Add(BureauEvent)`, `GetRecent(int)`, `ConnectionState` property, `UpdateConnectionState(KafkaConnectionState)` (per data-model.md)
 - [ ] T013 Create `appsettings.json` at `src/BureauObservability.Web/appsettings.json` — `Kafka:BootstrapServers`, `Kafka:Topic`, `Kafka:ConsumerGroup` (per contracts/configuration.md)
 - [ ] T014 Expose `Program` for testing: add `public partial class Program { }` at end of `src/BureauObservability.Web/Program.cs`
-- [ ] T015 Phase 2 checkpoint: Reviewer reviews phase, verify `dotnet build src/BureauObservability.sln` exits 0, commit — `"feat: phase 2 — models, interfaces, and configuration"`
+- [ ] T015 Phase 2 checkpoint: verify `dotnet build src/` exits 0, commit — `"feat: phase 2 — models, interfaces, and configuration"`
 
 ---
 
@@ -76,7 +76,7 @@ description: "Task list for Kafka Observability Dashboard — Core Scaffold"
 - [ ] T022 [US1] Implement `GET /api/status` endpoint in `src/BureauObservability.Web/Endpoints/EventsEndpoints.cs` — returns `KafkaConnectionState` as JSON (per contracts/rest-api.md)
 - [ ] T023 [US1] Register services in `src/BureauObservability.Web/Program.cs` — `AddSingleton<IEventStore, EventStore>()`, `AddHostedService<KafkaConsumerService>()`, `MapGet` for `/api/events/stream` and `/api/status`, bind `Kafka` config section
 - [ ] T024 [US1] Create `src/BureauObservability.Web/wwwroot/index.html` — connects to `/api/events/stream` via `EventSource`, renders incoming events as rows in a feed showing `type`, `time`, and `source`; shows connection status indicator
-- [ ] T025 Phase 3 checkpoint: Reviewer reviews phase, verify `dotnet test src/BureauObservability.sln` exits 0, commit — `"feat: phase 3 — live event feed (US1)"`
+- [ ] T025 Phase 3 checkpoint: verify `dotnet test src/` exits 0, commit — `"feat: phase 3 — live event feed (US1)"`
 
 ---
 
@@ -94,7 +94,7 @@ description: "Task list for Kafka Observability Dashboard — Core Scaffold"
 
 - [ ] T027 [US2] Implement `GET /api/events` REST endpoint in `src/BureauObservability.Web/Endpoints/EventsEndpoints.cs` — returns `{ events: [...], count: N }` from `IEventStore.GetRecent(100)` (per contracts/rest-api.md)
 - [ ] T028 [US2] Update `src/BureauObservability.Web/wwwroot/index.html` — add detail panel; clicking a feed row displays full CloudEvents fields (`cloudEventId`, `source`, `type`, `time`, `dataContentType`, `data` formatted as JSON); new SSE events do not close the panel; load initial events from `GET /api/events` on page open
-- [ ] T029 Phase 4 checkpoint: Reviewer reviews phase, verify `dotnet test src/BureauObservability.sln` exits 0, commit — `"feat: phase 4 — event detail inspection (US2)"`
+- [ ] T029 Phase 4 checkpoint: verify `dotnet test src/` exits 0, commit — `"feat: phase 4 — event detail inspection (US2)"`
 
 ---
 
@@ -103,7 +103,7 @@ description: "Task list for Kafka Observability Dashboard — Core Scaffold"
 - [ ] T030 [P] Run `dotnet format src/BureauObservability.sln --verify-no-changes` — fix any formatting issues
 - [ ] T031 Run `dotnet test src/BureauObservability.sln` — all tests pass, exits 0 (constitution Quality Gate 1)
 - [ ] T032 Validate acceptance scenarios from `specs/001-kafka-observability-dashboard/quickstart.md` against running dashboard
-- [ ] T033 Phase 5 checkpoint: Reviewer reviews phase, verify `dotnet test` exits 0 and `dotnet format --verify-no-changes` passes, commit — `"chore: phase 5 — polish and acceptance validation"`
+- [ ] T033 Phase 5 checkpoint: verify `dotnet test src/` exits 0 and `dotnet format src/ --verify-no-changes` passes, commit — `"chore: phase 5 — polish and acceptance validation"`
 
 ---
 
