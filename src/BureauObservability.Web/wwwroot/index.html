@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bureau Observability Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #0f1117; color: #e2e8f0; height: 100vh; display: flex; flex-direction: column; }
+    header { padding: 12px 20px; background: #1a1d27; border-bottom: 1px solid #2d3148; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 1rem; font-weight: 600; }
+    #status-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; font-weight: 500; }
+    .status-unknown { background: #374151; color: #9ca3af; }
+    .status-connected { background: #064e3b; color: #6ee7b7; }
+    .status-disconnected { background: #7f1d1d; color: #fca5a5; }
+    .status-error { background: #78350f; color: #fcd34d; }
+    main { display: flex; flex: 1; overflow: hidden; }
+    #feed { width: 55%; border-right: 1px solid #2d3148; overflow-y: auto; }
+    #detail { flex: 1; overflow-y: auto; padding: 16px; }
+    #feed-empty { padding: 20px; color: #6b7280; font-size: 0.875rem; }
+    .event-row { padding: 10px 16px; border-bottom: 1px solid #1e2235; cursor: pointer; transition: background 0.1s; }
+    .event-row:hover { background: #1e2235; }
+    .event-row.selected { background: #1e2a40; border-left: 3px solid #3b82f6; }
+    .event-row.parse-error { border-left: 3px solid #ef4444; }
+    .event-type { font-size: 0.8rem; color: #93c5fd; font-family: monospace; }
+    .event-meta { font-size: 0.7rem; color: #6b7280; margin-top: 2px; }
+    #detail-placeholder { color: #6b7280; font-size: 0.875rem; }
+    #detail-content { display: none; }
+    #detail-content h2 { font-size: 0.9rem; font-weight: 600; margin-bottom: 12px; color: #93c5fd; }
+    .detail-field { margin-bottom: 10px; }
+    .detail-label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .detail-value { font-size: 0.8rem; font-family: monospace; word-break: break-all; }
+    pre { background: #1a1d27; padding: 10px; border-radius: 4px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; color: #a5f3fc; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bureau Observability</h1>
+    <span id="status-badge" class="status-unknown">Unknown</span>
+    <span id="broker-info" style="font-size:0.75rem;color:#6b7280;margin-left:auto;"></span>
+  </header>
+  <main>
+    <div id="feed">
+      <div id="feed-empty">No events yet. Waiting for events on <code>bureau.runs</code>…</div>
+    </div>
+    <div id="detail">
+      <div id="detail-placeholder">Select an event to inspect its full payload.</div>
+      <div id="detail-content">
+        <h2>Event Detail</h2>
+        <div class="detail-field"><div class="detail-label">ID</div><div class="detail-value" id="d-id"></div></div>
+        <div class="detail-field"><div class="detail-label">CloudEvent ID</div><div class="detail-value" id="d-ce-id"></div></div>
+        <div class="detail-field"><div class="detail-label">Type</div><div class="detail-value" id="d-type"></div></div>
+        <div class="detail-field"><div class="detail-label">Source</div><div class="detail-value" id="d-source"></div></div>
+        <div class="detail-field"><div class="detail-label">Time</div><div class="detail-value" id="d-time"></div></div>
+        <div class="detail-field"><div class="detail-label">Data Content Type</div><div class="detail-value" id="d-dct"></div></div>
+        <div class="detail-field"><div class="detail-label">Partition / Offset</div><div class="detail-value" id="d-partition"></div></div>
+        <div class="detail-field"><div class="detail-label">Payload</div><pre id="d-data"></pre></div>
+      </div>
+    </div>
+  </main>
+  <script>
+    const MAX_EVENTS = 100;
+    const feedEl = document.getElementById('feed');
+    const feedEmpty = document.getElementById('feed-empty');
+    const statusBadge = document.getElementById('status-badge');
+    const brokerInfo = document.getElementById('broker-info');
+    const detailPlaceholder = document.getElementById('detail-placeholder');
+    const detailContent = document.getElementById('detail-content');
+
+    let selectedId = null;
+    let eventMap = new Map(); // id -> event object
+    let eventOrder = []; // ids newest-first
+
+    function setStatus(state) {
+      const s = state.status || 'Unknown';
+      statusBadge.textContent = s;
+      statusBadge.className = 'status-' + s.toLowerCase();
+      if (state.brokerEndpoint) {
+        brokerInfo.textContent = state.brokerEndpoint + ' · ' + (state.consumerGroup || '');
+      }
+    }
+
+    function renderFeed() {
+      // Remove all event rows
+      feedEl.querySelectorAll('.event-row').forEach(el => el.remove());
+      feedEmpty.style.display = eventOrder.length === 0 ? '' : 'none';
+      for (const id of eventOrder) {
+        const ev = eventMap.get(id);
+        const row = document.createElement('div');
+        row.className = 'event-row' + (ev.isParseError ? ' parse-error' : '') + (id === selectedId ? ' selected' : '');
+        row.dataset.id = id;
+        row.innerHTML = `<div class="event-type">${escHtml(ev.type)}</div><div class="event-meta">${escHtml(new Date(ev.time).toLocaleTimeString())} · ${escHtml(ev.source)}</div>`;
+        row.addEventListener('click', () => selectEvent(id));
+        feedEl.appendChild(row);
+      }
+    }
+
+    function addEvent(ev) {
+      if (!eventMap.has(ev.id)) {
+        eventMap.set(ev.id, ev);
+        eventOrder.unshift(ev.id);
+        if (eventOrder.length > MAX_EVENTS) {
+          const removed = eventOrder.pop();
+          eventMap.delete(removed);
+        }
+      }
+    }
+
+    function selectEvent(id) {
+      selectedId = id;
+      const ev = eventMap.get(id);
+      if (!ev) return;
+      document.querySelectorAll('.event-row').forEach(r => r.classList.remove('selected'));
+      const row = feedEl.querySelector(`[data-id="${CSS.escape(id)}"]`);
+      if (row) row.classList.add('selected');
+      detailPlaceholder.style.display = 'none';
+      detailContent.style.display = '';
+      document.getElementById('d-id').textContent = ev.id;
+      document.getElementById('d-ce-id').textContent = ev.cloudEventId || '—';
+      document.getElementById('d-type').textContent = ev.type;
+      document.getElementById('d-source').textContent = ev.source;
+      document.getElementById('d-time').textContent = new Date(ev.time).toISOString();
+      document.getElementById('d-dct').textContent = ev.dataContentType || '—';
+      document.getElementById('d-partition').textContent = `${ev.partition} / ${ev.offset}`;
+      try {
+        document.getElementById('d-data').textContent = JSON.stringify(JSON.parse(ev.data), null, 2);
+      } catch {
+        document.getElementById('d-data').textContent = ev.data;
+      }
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Load initial events from REST
+    fetch('/api/events')
+      .then(r => r.json())
+      .then(body => {
+        // body.events is newest-first; addEvent preserves order
+        (body.events || []).forEach(ev => addEvent(ev));
+        renderFeed();
+      });
+
+    // Fetch initial status
+    fetch('/api/status')
+      .then(r => r.json())
+      .then(state => setStatus(state));
+
+    // Connect SSE
+    const es = new EventSource('/api/events/stream');
+
+    es.addEventListener('bureau-event', e => {
+      const ev = JSON.parse(e.data);
+      addEvent(ev);
+      renderFeed();
+    });
+
+    es.addEventListener('connection-state', e => {
+      const state = JSON.parse(e.data);
+      setStatus(state);
+    });
+
+    es.onerror = () => {
+      statusBadge.textContent = 'Disconnected';
+      statusBadge.className = 'status-disconnected';
+    };
+  </script>
+</body>
+</html>
