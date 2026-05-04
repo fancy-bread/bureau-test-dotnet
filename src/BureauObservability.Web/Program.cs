@@ -1,7 +1,16 @@
+using BureauObservability.Web.Endpoints;
+using BureauObservability.Web.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSingleton<IEventStore, EventStore>();
+builder.Services.AddHostedService<KafkaConsumerService>();
+
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.UseStaticFiles();
+app.MapEventsEndpoints();
+app.MapGet("/", () => Results.Redirect("/index.html"));
 
 app.Run();
 
